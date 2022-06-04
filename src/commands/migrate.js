@@ -48,7 +48,7 @@ const migrate = {
         }
         console.log("Using DB: " + dbfile);
         console.log("Using target path: " + existing_path);
-
+        console.log("");
         let isDirectory = fs.statSync(playlistpath).isDirectory();
         if (!isDirectory) {
             let { playlist_name, song_files } = await migrate.parseM3U(
@@ -56,11 +56,14 @@ const migrate = {
                 true
             );
             console.log("Importing playlist: " + playlist_name);
-            await migrate.import_playlist(
+            let added_songs_count = await migrate.import_playlist(
                 db,
                 playlist_name,
                 song_files,
                 existing_path
+            );
+            console.log(
+                `Imported ${added_songs_count} song(s) into ${playlist_name}.`
             );
         } else {
             let filenames = fs.readdirSync(playlistpath);
@@ -74,15 +77,18 @@ const migrate = {
                     return;
                 }
                 console.log("Migrating playlist: " + playlist_name);
-                await migrate.import_playlist(
+                let added_songs_count = await migrate.import_playlist(
                     db,
                     playlist_name,
                     song_files,
                     existing_path
                 );
+                console.log(
+                    `Imported ${added_songs_count} song(s) into ${playlist_name}.`
+                );
             });
         }
-
+        console.log("");
         console.log("Migration completed.");
     },
     import_playlist: async (db, playlist_name, song_files, existing_path) => {
@@ -111,9 +117,9 @@ const migrate = {
         });
 
         if (new_entry.length != 0) {
-            console.log(sql);
             await db.run(sql, ...new_entry);
         }
+        return new_entry.length;
     },
     parseM3U: async (m3u_path, verbose = false) => {
         if (
