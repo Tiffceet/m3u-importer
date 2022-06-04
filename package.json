@@ -1,0 +1,21 @@
+{
+    "name": "m3u-importer",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "type": "module",
+    "license": "ISC",
+    "bin": {
+        "v": "./src/index.js"
+    },
+    "dependencies": {
+        "sqlite": "^4.1.1",
+        "sqlite3": "^5.0.8",
+        "yargs": "^17.5.1"
+    }
+}
