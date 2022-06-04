@@ -1,14 +1,12 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 const view = {
-    command: "view",
+    command: "view <dbfile>",
     description: "View details about the backup db",
     builder: (yargs, helpOrVersionSet) => {
-        return yargs.option("f", {
-            alias: "dbfile",
+        return yargs.positional("dbfile", {
             describe: "File path to your sqlite db",
             type: "string",
-            demandOption: true,
         });
     },
     handler: async (argv) => {
@@ -30,18 +28,18 @@ const view = {
             let paths = await db.all("SELECT path FROM music_playlist");
             paths = Object.keys(
                 paths.reduce((prev, cur, idx) => {
-                    cur = cur.path
+                    cur = cur.path;
                     let path = cur.slice(0, cur.lastIndexOf("/") + 1);
                     if (!prev[path]) {
                         prev[path] = true;
                     }
-                    return prev
+                    return prev;
                 }, {})
             );
             console.log("Existing path(s):");
-            paths.forEach((v, i)=> {
-                console.log(`\t${i+1}. ${v}`)
-            })
+            paths.forEach((v, i) => {
+                console.log(`\t${i + 1}. ${v}`);
+            });
         }
     },
 };
