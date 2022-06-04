@@ -3,7 +3,9 @@ import * as Commands from "./commands/index.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
-let yargs_obj = yargs(hideBin(process.argv)).usage("Usage: $0 <command>");
+let yargs_obj = yargs(hideBin(process.argv))
+    .scriptName("pli")
+    .usage("Usage: $0 <command>");
 
 Object.keys(Commands).forEach((command_name) => {
     const command = Commands[command_name];
