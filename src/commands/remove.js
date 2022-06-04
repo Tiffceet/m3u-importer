@@ -1,5 +1,6 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
+import * as readline from "readline";
 const remove = {
     command: "remove",
     description: "remove all playlist from db",
@@ -25,10 +26,28 @@ const remove = {
             filename: dbfile,
             driver: sqlite3.Database,
         });
-
-        await db.run("DELETE FROM music_playlist WHERE name = ?", playlistname);
-
-        console.log(`Successfully deleted '${playlistname}' from db`);
+        if (playlistname) {
+            await db.run(
+                "DELETE FROM music_playlist WHERE name = ?",
+                playlistname
+            );
+            console.log(`Successfully deleted '${playlistname}' from db`);
+        }
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+        rl.question(
+            "Are you sure you want to delete ALL playlists ?[y/N] ",
+            async (response) => {
+                if (response !== "y") {
+                    return;
+                }
+                await db.run("DELETE FROM music_playlist");
+                console.log(`Successfully deleted all playlist from db`);
+                rl.close();
+            }
+        );
     },
 };
 

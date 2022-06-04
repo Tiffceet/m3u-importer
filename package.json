@@ -11,7 +11,7 @@
     "type": "module",
     "license": "ISC",
     "bin": {
-        "v": "./src/index.js"
+        "pli": "./src/index.js"
     },
     "dependencies": {
         "fs.js": "^0.0.1",

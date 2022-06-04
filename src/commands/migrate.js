@@ -30,22 +30,23 @@ const migrate = {
             });
     },
     handler: async (argv) => {
-        let { dbfile, playlistpath, rpath } = argv;
+        let { dbfile, playlistpath, tpath } = argv;
         let db = await open({
             filename: dbfile,
             driver: sqlite3.Database,
         });
 
-        let existing_path = rpath || (await migrate.getExistingPath(db));
-        if (!existing_path.endsWith("/")) {
-            existing_path = existing_path + "/";
-        }
+        let existing_path = tpath || (await migrate.getExistingPath(db));
         if (!existing_path) {
             console.log(
                 "Unable to find existing path. Please use the --tpath flag to provide a target path"
             );
             return;
         }
+        if (!existing_path.endsWith("/")) {
+            existing_path = existing_path + "/";
+        }
+
         console.log("Using DB: " + dbfile);
         console.log("Using target path: " + existing_path);
         console.log("");
@@ -67,26 +68,30 @@ const migrate = {
             );
         } else {
             let filenames = fs.readdirSync(playlistpath);
-            filenames.forEach(async (v) => {
-                let filepath = playlistpath + v;
+            if (!playlistpath.endsWith("\\")) {
+                playlistpath = playlistpath + "\\";
+            }
+            for (let i = 0; i < filenames.length; i++) {
+                const filename = filenames[i];
+                let filepath = playlistpath + filename;
                 if (fs.statSync(filepath).isDirectory()) {
-                    return;
+                    continue;
                 }
                 let m3u = await migrate.parseM3U(filepath);
                 if (!m3u) {
-                    return;
+                    continue;
                 }
-                console.log("Migrating playlist: " + playlist_name);
+                console.log("Migrating playlist: " + m3u.playlist_name);
                 let added_songs_count = await migrate.import_playlist(
                     db,
-                    playlist_name,
-                    song_files,
+                    m3u.playlist_name,
+                    m3u.song_files,
                     existing_path
                 );
                 console.log(
-                    `Imported ${added_songs_count} song(s) into ${playlist_name}.`
+                    `Imported ${added_songs_count} song(s) into ${m3u.playlist_name}.`
                 );
-            });
+            }
         }
         console.log("");
         console.log("Migration completed.");
@@ -160,7 +165,11 @@ const migrate = {
         if (ct < 1) {
             return false;
         }
-        let [{ path }] = await db.all("SELECT * FROM music_playlist limit 1");
+        let entry = await db.all("SELECT * FROM music_playlist limit 1");
+        if (entry.length == 0) {
+            return false;
+        }
+        let [{ path }] = entry;
         return path.slice(0, path.lastIndexOf("/") + 1);
     },
 };
