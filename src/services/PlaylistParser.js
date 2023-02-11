@@ -1,6 +1,8 @@
 import * as events from "events";
 import * as readline from "readline";
 import * as fs from "fs";
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
 export async function parseM3U(m3u_path, verbose = false) {
     if (
         !m3u_path.toLowerCase().endsWith(".m3u") &&
@@ -34,4 +36,25 @@ export async function parseM3U(m3u_path, verbose = false) {
 
     await events.once(rl, "close");
     return { playlist_name, song_files };
+}
+
+export async function parseMobileV5Db(dbfile) {
+    let db = await open({
+        filename: dbfile,
+        driver: sqlite3.Database,
+    });
+    let songs = await db.all("SELECT * FROM music_playlist");
+
+    let playlists = {};
+
+    for (let i = 0; i < songs.length; i++) {
+        const { name, path } = songs[i];
+        if (playlists[name]) {
+            playlists[name].push(path);
+        } else {
+            playlists[name] = [path];
+        }
+    }
+
+    return playlists;
 }

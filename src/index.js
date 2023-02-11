@@ -13,7 +13,7 @@ Object.keys(Commands).forEach((command_name) => {
         command.command,
         command.description,
         command.builder,
-        command.handler
+        command.handler,
     );
 });
 yargs_obj.demandCommand(1).parse();
