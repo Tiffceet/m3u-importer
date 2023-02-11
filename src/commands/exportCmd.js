@@ -1,6 +1,6 @@
 import { parseMobileV5Db } from "./../services/PlaylistParser.js";
 import * as fs from "fs";
-import { prompt } from "../helpers/IO.js";
+import { ProgressBar, prompt } from "../helpers/IO.js";
 import { getMediaMetadata } from "../helpers/MediaMetadataParser.js";
 const exportCmd = {
     command: "export <dbfile> <songFolderPath> [exportFolder]",
@@ -65,6 +65,11 @@ const exportCmd = {
             success: 0,
             failed: 0,
         };
+
+        const totalSongs = Object.entries(playlist).reduce((prev, cur, i) => prev + cur[1].length, 0)
+        let songsProcessed = 0
+        const progressBar = new ProgressBar(0, totalSongs)
+
         // For each playlist
         for (let i = 0; i < playlistTitles.length; i++) {
             const songPaths = playlist[playlistTitles[i]];
@@ -95,15 +100,19 @@ const exportCmd = {
                         mediaLengthSeconds = Math.floor(duration);
                         metadataReadCounter.success++;
                     } catch (err) {
+                        progressBar.pause();
                         console.warn(
                             "Cannot read metadata for: " + songFullPath
                         );
+                        progressBar.resume();
                         metadataReadCounter.failed++;
                     }
                 }
 
                 m3u8Output += `#EXTINF:${mediaLengthSeconds},${songFileWithoutExtension}\n`;
                 m3u8Output += `${songFullPath}\n`;
+                songsProcessed++;
+                progressBar.render(songsProcessed)
             }
 
             // Add: \ufeff because winamp is stopid (UTF-8 BOM)
