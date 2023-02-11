@@ -15,13 +15,14 @@ export async function getMediaMetadata(filepath) {
 
     const metadata = await parseStream(stream);
 
-    let { format } = metadata;
+    let { common, format } = metadata;
 
-    if (!format) {
+    if (!format || !common) {
         throw new Error("Unable to get metadata");
     }
 
+    let { title } = common
     let { duration } = format;
 
-    return { duration };
+    return { title, duration };
 }

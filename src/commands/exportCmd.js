@@ -19,15 +19,15 @@ const exportCmd = {
                 describe: "Optional export folder path; Default: playlists",
                 type: "string",
             })
-            .option("parseSongLength", {
+            .option("parseSongMetadata", {
                 alias: "p",
                 describe:
-                    "Attempt to parse song length from provided songFolderPath and add it into .m3u8 metadata",
+                    "Attempt to parse song metadata from provided songFolderPath and add it into .m3u8 metadata",
                 boolean: true,
             });
     },
     handler: async (argv) => {
-        let { dbfile, songFolderPath, exportFolderPath, parseSongLength } =
+        let { dbfile, songFolderPath, exportFolderPath, parseSongMetadata } =
             argv;
         if (!dbfile) {
             console.log("Please provide your sqlite db file");
@@ -66,9 +66,12 @@ const exportCmd = {
             failed: 0,
         };
 
-        const totalSongs = Object.entries(playlist).reduce((prev, cur, i) => prev + cur[1].length, 0)
-        let songsProcessed = 0
-        const progressBar = new ProgressBar(0, totalSongs)
+        const totalSongs = Object.entries(playlist).reduce(
+            (prev, cur, i) => prev + cur[1].length,
+            0
+        );
+        let songsProcessed = 0;
+        const progressBar = new ProgressBar(0, totalSongs);
 
         // For each playlist
         for (let i = 0; i < playlistTitles.length; i++) {
@@ -87,32 +90,41 @@ const exportCmd = {
                     songFileName.lastIndexOf(".")
                 );
 
+                // Fields to be inserted
+                let mediaLengthSeconds = "";
+                let songTitle = songFileWithoutExtension;
                 let songFullPath = `${songFolderPath}\\${songFileName}`;
 
-                let mediaLengthSeconds = "";
-                if (parseSongLength) {
-                    // TODO: Change according to function return val
+                if (parseSongMetadata) {
                     try {
-                        let { duration } = await getMediaMetadata(songFullPath);
-                        if (typeof duration !== "number") {
-                            throw new Error("Unable to get duration");
+                        let { title, duration } = await getMediaMetadata(
+                            songFullPath
+                        );
+
+                        // Only overwrite metadata if exists
+                        if (typeof duration === "number") {
+                            mediaLengthSeconds = Math.floor(duration);
                         }
-                        mediaLengthSeconds = Math.floor(duration);
+
+                        if (typeof title === "string" && title.trim() !== "") {
+                            songTitle = title;
+                        }
+
                         metadataReadCounter.success++;
                     } catch (err) {
                         progressBar.pause();
                         console.warn(
-                            "Cannot read metadata for: " + songFullPath
+                            `Cannot read metadata (songFullPath=${songFullPath};playlist=${playlistTitles[i]})`
                         );
                         progressBar.resume();
                         metadataReadCounter.failed++;
                     }
                 }
 
-                m3u8Output += `#EXTINF:${mediaLengthSeconds},${songFileWithoutExtension}\n`;
+                m3u8Output += `#EXTINF:${mediaLengthSeconds},${songTitle}\n`;
                 m3u8Output += `${songFullPath}\n`;
                 songsProcessed++;
-                progressBar.render(songsProcessed)
+                progressBar.render(songsProcessed);
             }
 
             // Add: \ufeff because winamp is stopid (UTF-8 BOM)
@@ -126,7 +138,7 @@ const exportCmd = {
         }
 
         console.log("");
-        if (parseSongLength) {
+        if (parseSongMetadata) {
             console.log(
                 `${metadataReadCounter.success}/${
                     metadataReadCounter.failed + metadataReadCounter.success
