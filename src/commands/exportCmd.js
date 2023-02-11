@@ -1,6 +1,7 @@
 import { parseMobileV5Db } from "./../services/PlaylistParser.js";
 import * as fs from "fs";
 import { prompt } from "../helpers/IO.js";
+import { getMediaMetadata } from "../helpers/MediaMetadataParser.js";
 const exportCmd = {
     command: "export <dbfile> <songFolderPath> [exportFolder]",
     description: "Export .db file into .m3u8 playlist",
@@ -17,10 +18,17 @@ const exportCmd = {
             .positional("exportFolderPath", {
                 describe: "Optional export folder path; Default: playlists",
                 type: "string",
+            })
+            .option("parseSongLength", {
+                alias: "p",
+                describe:
+                    "Attempt to parse song length from provided songFolderPath and add it into .m3u8 metadata",
+                boolean: true,
             });
     },
     handler: async (argv) => {
-        let { dbfile, songFolderPath, exportFolderPath } = argv;
+        let { dbfile, songFolderPath, exportFolderPath, parseSongLength } =
+            argv;
         if (!dbfile) {
             console.log("Please provide your sqlite db file");
             return;
@@ -42,8 +50,8 @@ const exportCmd = {
         console.log(
             "Playlists will be exported to this folder: " + exportFolderPath
         );
-        let response = await prompt("Continue? [y/N] ")
-        if(response !== 'y') {
+        let response = await prompt("Continue? [y/N] ");
+        if (response !== "y") {
             return;
         }
 
@@ -53,6 +61,10 @@ const exportCmd = {
             fs.mkdirSync(exportFolderPath, { recursive: true });
         }
 
+        let metadataReadCounter = {
+            success: 0,
+            failed: 0,
+        };
         // For each playlist
         for (let i = 0; i < playlistTitles.length; i++) {
             const songPaths = playlist[playlistTitles[i]];
@@ -70,8 +82,28 @@ const exportCmd = {
                     songFileName.lastIndexOf(".")
                 );
 
-                m3u8Output += `#EXTINF:,${songFileWithoutExtension}\n`;
-                m3u8Output += `${songFolderPath}\\${songFileName}\n`;
+                let songFullPath = `${songFolderPath}\\${songFileName}`;
+
+                let mediaLengthSeconds = "";
+                if (parseSongLength) {
+                    // TODO: Change according to function return val
+                    try {
+                        let { duration } = await getMediaMetadata(songFullPath);
+                        if (typeof duration !== "number") {
+                            throw new Error("Unable to get duration");
+                        }
+                        mediaLengthSeconds = Math.floor(duration);
+                        metadataReadCounter.success++;
+                    } catch (err) {
+                        console.warn(
+                            "Cannot read metadata for: " + songFullPath
+                        );
+                        metadataReadCounter.failed++;
+                    }
+                }
+
+                m3u8Output += `#EXTINF:${mediaLengthSeconds},${songFileWithoutExtension}\n`;
+                m3u8Output += `${songFullPath}\n`;
             }
 
             // Add: \ufeff because winamp is stopid (UTF-8 BOM)
@@ -85,6 +117,13 @@ const exportCmd = {
         }
 
         console.log("");
+        if (parseSongLength) {
+            console.log(
+                `${metadataReadCounter.success}/${
+                    metadataReadCounter.failed + metadataReadCounter.success
+                } file(s) metadata parsed`
+            );
+        }
         console.log(`${playlistTitles.length} playlists exported.`);
     },
 };
