@@ -32,6 +32,7 @@ const remove = {
                 playlistname
             );
             console.log(`Successfully deleted '${playlistname}' from db`);
+            return;
         }
         const rl = readline.createInterface({
             input: process.stdin,
@@ -41,6 +42,7 @@ const remove = {
             "Are you sure you want to delete ALL playlists ?[y/N] ",
             async (response) => {
                 if (response !== "y") {
+                    rl.close();
                     return;
                 }
                 await db.run("DELETE FROM music_playlist");
