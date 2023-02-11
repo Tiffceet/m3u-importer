@@ -3,7 +3,7 @@ import * as fs from "fs";
 import { ProgressBar, prompt } from "../helpers/IO.js";
 import { getMediaMetadata } from "../helpers/MediaMetadataParser.js";
 const exportCmd = {
-    command: "export <dbfile> <songFolderPath> [exportFolder]",
+    command: "export <dbfile> <songFolderPath> [exportFolderPath]",
     description: "Export .db file into .m3u8 playlist",
     builder: (yargs, helpOrVersionSet) => {
         return yargs
