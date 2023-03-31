@@ -19,10 +19,15 @@ npm install -g m3u-importer
 Usage: pli <command>
 
 Commands:
-  pli generate  Generate blank db file with preset template
-  pli list      list playlists in db
-  pli migrate   migrate .m3u playlist into db
-  pli remove    remove all playlist from db
+  pli concat <files..>                      Combine multiple .lrc files
+  pli export <dbfile> <songFolderPath> [ex  Export .db file into .m3u8 playlist
+  portFolderPath]
+  pli generate                              Generate blank db file with preset t
+                                            emplate
+  pli migrate                               migrate .m3u playlist into db
+  pli remove                                remove all playlist from db
+  pli view <dbfile>                         View details about the backup db
+  pli winamp                                winamp related utils function
 
 Options:
   --help     Show help                                                 [boolean]
